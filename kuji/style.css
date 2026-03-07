@@ -442,7 +442,3 @@ main { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
 
 /* ios 확대 방지 */
 html{ touch-action: pan-y; }
-
-.button-medium {
-    touch-action:manipulation;
-}
