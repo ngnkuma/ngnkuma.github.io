@@ -19,11 +19,15 @@
     font-family: 'KCC-Hanbit', sans-serif !important; 
     font-weight: 400 !important; 
     letter-spacing: -0.02em; 
+    touch-action: manipulation !important;
 }
 
 html {
     overflow-y: scroll; 
     overflow-x: hidden; 
+    /* ✨ 사파리 번역 시 지멋대로 글씨 키우면서 화면 줌인하는 것 원천 차단 */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 /* 테마 */
@@ -55,6 +59,8 @@ font, font > a {
     white-space: inherit !important;
     font-family: inherit !important;
     color: inherit !important;
+    /* ✨ 사파리가 억지로 주입한 번역 태그에서 줌이 뚫리는 버그 암살 */
+    touch-action: manipulation !important; 
 }
 .goog-te-banner-frame, .goog-tooltip { 
     display: none !important; 
@@ -439,4 +445,5 @@ main { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
     .prize-img { margin-bottom: 3px; width: 90%; }
     .prize-name { font-size: 0.65rem; }
 }
-
+/* ios 확대 방지 */
+html{touch-action: pan-y;}
