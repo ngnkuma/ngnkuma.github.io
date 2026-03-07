@@ -1,6 +1,6 @@
-/* =============================================
-   상태 변수
-   ============================================= */
+/* ======================
+   상태
+   ====================== */
 
 let kujiData = [];
 let kujiMetaMap = {};
@@ -15,52 +15,56 @@ let pullHistory = [];
 let lastDrawnItems = [];
 let selectedAutoItemKey = null;
 
-
-/* =============================================
+/* ======================
    DOM 참조
-   ============================================= */
+   ====================== */
 
-const screenHome      = document.getElementById('screen-home');
-const screenGacha     = document.getElementById('screen-gacha');
-const kujiListGrid    = document.getElementById('kuji-list-grid');
-const probWrapper     = document.getElementById('prob-wrapper');
-const resultsWrapper  = document.getElementById('results-wrapper');
-const resultsGrid     = document.getElementById('results-grid');
+const screenHome       = document.getElementById('screen-home');
+const screenGacha      = document.getElementById('screen-gacha');
+const kujiListGrid     = document.getElementById('kuji-list-grid');
+const probWrapper      = document.getElementById('prob-wrapper');
+const resultsWrapper   = document.getElementById('results-wrapper');
+const resultsGrid      = document.getElementById('results-grid');
 const probabilityTable = document.getElementById('probability-table');
 
-const kujiLinkBadge  = document.getElementById('kuji-link-badge');
+const kujiLinkBadge   = document.getElementById('kuji-link-badge');
 const collectionBadge = document.getElementById('collection-badge');
-const statPulls      = document.getElementById('total-pulls');
-const statSpent      = document.getElementById('total-spent');
+const statPulls       = document.getElementById('total-pulls');
+const statSpent       = document.getElementById('total-spent');
 
-const modalOverlay    = document.getElementById('result-modal');
+const modalOverlay     = document.getElementById('result-modal');
 const modalResultsGrid = document.getElementById('modal-results-grid');
-const modalTitleText  = document.getElementById('modal-title-text');
-const autoSetupModal  = document.getElementById('auto-setup-modal');
-const autoItemList    = document.getElementById('auto-item-list');
+const modalTitleText   = document.getElementById('modal-title-text');
+const autoSetupModal   = document.getElementById('auto-setup-modal');
+const autoItemList     = document.getElementById('auto-item-list');
 
-const btnModalClose  = document.getElementById('btn-modal-close');
-const btnAuto        = document.getElementById('btn-auto');
-const btnAutoClose   = document.getElementById('btn-auto-close');
-const btnAutoStart   = document.getElementById('btn-auto-start');
-const btnShare       = document.getElementById('btn-share');
+const btnModalClose = document.getElementById('btn-modal-close');
+const btnAuto       = document.getElementById('btn-auto');
+const btnAutoClose  = document.getElementById('btn-auto-close');
+const btnAutoStart  = document.getElementById('btn-auto-start');
+const btnShare      = document.getElementById('btn-share');
 
-
-/* =============================================
+/* ======================
    데이터
-   ============================================= */
+   ====================== */
 
 async function fetchData() {
     try {
         const [chiikawaRes, naganoRes] = await Promise.all([
             fetch('data/chiikawa.csv'),
-            fetch('data/nagano.csv')
+            fetch('data/nagano.csv'),
         ]);
 
-        const chiikawaData = parseCSV(await chiikawaRes.text()).map(item => ({ ...item, market: 'chiikawa' }));
-        const naganoData   = parseCSV(await naganoRes.text()).map(item => ({ ...item, market: 'nagano' }));
+        const [chiikawaText, naganoText] = await Promise.all([
+            chiikawaRes.text(),
+            naganoRes.text(),
+        ]);
 
-        kujiData = [...chiikawaData, ...naganoData];
+        kujiData = [
+            ...parseCSV(chiikawaText).map(item => ({ ...item, market: 'chiikawa' })),
+            ...parseCSV(naganoText).map(item => ({ ...item, market: 'nagano' })),
+        ];
+
         extractKujiMeta();
     } catch (error) {
         alert('데이터 불러오기 실패!');
@@ -71,7 +75,6 @@ function parseCSV(csvText) {
     const rows = csvText.split(/\r?\n/);
     if (rows.length === 0) return [];
 
-    // 따옴표를 고려한 CSV 한 줄 파싱
     function parseLine(line) {
         const result = [];
         let current = '';
@@ -82,7 +85,7 @@ function parseCSV(csvText) {
             if (char === '"') {
                 if (inQuotes && line[i + 1] === '"') {
                     current += '"';
-                    i++; // escaped quote ("") 처리
+                    i++; // 이스케이프된 큰따옴표 건너뜀
                 } else {
                     inQuotes = !inQuotes;
                 }
@@ -98,18 +101,17 @@ function parseCSV(csvText) {
     }
 
     const headers = parseLine(rows[0]);
-    const data = [];
 
-    for (let i = 1; i < rows.length; i++) {
-        if (!rows[i].trim()) continue;
-        const cols = parseLine(rows[i]);
+    return rows.slice(1).reduce((data, row) => {
+        if (!row.trim()) return data;
+        const cols = parseLine(row);
         const item = {};
-        headers.forEach((header, index) => {
-            if (cols[index] !== undefined) item[header] = cols[index];
+        headers.forEach((header, i) => {
+            if (cols[i] !== undefined) item[header] = cols[i];
         });
         if (item.kuji_id) data.push(item);
-    }
-    return data;
+        return data;
+    }, []);
 }
 
 function extractKujiMeta() {
@@ -127,30 +129,25 @@ function extractKujiMeta() {
                 market: item.market,
                 thumb:  item.thumbnail || 'https://via.placeholder.com/300x300?text=No+Image',
                 price:  item.price || 0,
-                status: status,
-                url:    item.url || ''
+                status,
+                url:    item.url || '',
             };
         } else {
-            // 썸네일이 없는 경우 뒤에서 채워넣기
-            if (!kujiMetaMap[item.kuji_id].thumb.startsWith('https://via.placeholder') === false && item.thumbnail) {
-                kujiMetaMap[item.kuji_id].thumb = item.thumbnail;
+            const meta = kujiMetaMap[item.kuji_id];
+            if (meta.thumb === 'https://via.placeholder.com/300x300?text=No+Image' && item.thumbnail) {
+                meta.thumb = item.thumbnail;
             }
-            // 한 행이라도 'end'면 종료 상태로 표시
-            if (status === 'end') {
-                kujiMetaMap[item.kuji_id].status = 'end';
-            }
+            if (status === 'end') meta.status = 'end';
         }
     });
 }
 
-
-/* =============================================
-   화면 전환
-   ============================================= */
+/* ======================
+   UI — 화면 전환
+   ====================== */
 
 function applyTheme(market) {
     document.body.classList.toggle('theme-nagano', market === 'nagano');
-
     document.querySelectorAll('.market-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.market === market);
     });
@@ -161,7 +158,7 @@ function showHome(market) {
     applyTheme(market);
 
     screenGacha.style.display = 'none';
-    screenHome.style.display = 'block';
+    screenHome.style.display  = 'block';
 
     resetSimulation();
     renderHomeList();
@@ -175,28 +172,31 @@ function enterGachaRoom(kujiId) {
         return;
     }
 
-    activeKujiId = kujiId;
-    currentMarket = meta.market;
+    activeKujiId    = kujiId;
+    currentMarket   = meta.market;
+    activeKujiItems = kujiData.filter(item => item.kuji_id === kujiId);
+    currentPrice    = parseInt(meta.price, 10);
+
     applyTheme(currentMarket);
 
-    activeKujiItems = kujiData.filter(item => item.kuji_id === activeKujiId);
-    currentPrice = parseInt(meta.price, 10);
-
-    kujiLinkBadge.href = meta.url;
-    kujiLinkBadge.style.display = meta.url ? 'block' : 'none';
+    if (meta.url) {
+        kujiLinkBadge.href          = meta.url;
+        kujiLinkBadge.style.display = 'block';
+    } else {
+        kujiLinkBadge.style.display = 'none';
+    }
 
     updateDrawButtons(currentPrice);
     renderProbabilityTable();
 
-    screenHome.style.display = 'none';
+    screenHome.style.display  = 'none';
     screenGacha.style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
-
-/* =============================================
-   UI 렌더링
-   ============================================= */
+/* ======================
+   UI — 홈 목록
+   ====================== */
 
 function renderHomeList() {
     kujiListGrid.innerHTML = '';
@@ -225,7 +225,7 @@ function renderHomeList() {
             window.location.hash = encodeURIComponent(kuji.id);
         });
 
-        // 카드에 마우스를 올리거나 터치할 때 이미지 프리로드
+        // hover/터치 시 해당 쿠지 이미지 프리로드
         const preload = () => {
             kujiData
                 .filter(item => item.kuji_id === kuji.id && item.image)
@@ -238,12 +238,19 @@ function renderHomeList() {
     });
 }
 
+/* ======================
+   UI — 뽑기 화면
+   ====================== */
+
 function updateDrawButtons(price) {
-    [1, 3, 5, 10].forEach(times => {
-        document.getElementById(`btn-draw-${times}`).innerHTML = `
-            <span class="times">${times}회</span>
-            <span class="price">${(price * times).toLocaleString()}엔</span>
-        `;
+    [1, 3, 5, 10].forEach(n => {
+        const btn = document.querySelector(`.draw-btn[data-times="${n}"]`);
+        if (btn) {
+            btn.innerHTML = `
+                <span class="times">${n}회</span>
+                <span class="price">${(price * n).toLocaleString()}엔</span>
+            `;
+        }
     });
 }
 
@@ -259,7 +266,6 @@ function getGradeColor(grade) {
 function renderProbabilityTable() {
     probabilityTable.innerHTML = '';
 
-    // grade별로 묶기
     const groups = {};
     activeKujiItems.forEach(item => {
         if (!groups[item.grade]) groups[item.grade] = { items: [], totalRate: 0 };
@@ -268,10 +274,10 @@ function renderProbabilityTable() {
     });
 
     for (const [grade, data] of Object.entries(groups)) {
-        const tRate = Math.round(data.totalRate * 10) / 10;
+        const tRate     = Math.round(data.totalRate * 10) / 10;
         const gradeName = data.items[0].grade_name ? ` ${data.items[0].grade_name}` : '';
 
-        const itemsHtml = data.items.map(item => `
+        const itemsHTML = data.items.map(item => `
             <div class="prob-item-card">
                 <img src="${item.image || 'https://via.placeholder.com/60'}">
                 <div class="prob-info">
@@ -290,52 +296,54 @@ function renderProbabilityTable() {
                     <span style="color: #888; font-size: 0.85em;">(${tRate}%)</span>
                 </span>
             </div>
-            <div class="prob-items-grid">${itemsHtml}</div>
+            <div class="prob-items-grid">${itemsHTML}</div>
         `;
         probabilityTable.appendChild(section);
     }
 }
 
+/* ======================
+   UI — 결과 카드
+   ====================== */
+
 function renderMainResultsGrid(shouldHighlight = true) {
     resultsGrid.innerHTML = '';
 
-    // 각 상품의 누적 개수 계산
-    const groupedCounts = pullHistory.reduce((acc, item) => {
+    const counts = {};
+    pullHistory.forEach(item => {
         const key = `${item.grade}||${item.name}`;
-        acc[key] = (acc[key] || 0) + 1;
-        return acc;
-    }, {});
+        counts[key] = (counts[key] || 0) + 1;
+    });
 
-    // 원래 상품 순서대로 결과 표시
     activeKujiItems.forEach(item => {
         const key = `${item.grade}||${item.name}`;
-        if (groupedCounts[key] > 0) {
-            renderResultCard(item, resultsGrid, groupedCounts[key], shouldHighlight);
-        }
+        if (counts[key]) renderResultCard(item, resultsGrid, counts[key], shouldHighlight);
     });
 
     const totalKinds     = activeKujiItems.length;
-    const collectedKinds = Object.keys(groupedCounts).length;
+    const collectedKinds = Object.keys(counts).length;
 
     collectionBadge.innerText = `${collectedKinds}/${totalKinds}`;
     collectionBadge.classList.toggle('complete', collectedKinds >= totalKinds);
     collectionBadge.style.display = 'block';
-
     btnShare.style.display = 'flex';
 }
 
 function renderResultCard(item, container, count = 1, shouldHighlight = true) {
-    const key   = `${item.grade}||${item.name}`;
-    const color = getGradeColor(item.grade);
+    const card = document.createElement('div');
+    card.className = 'prize-card';
+
+    const key = `${item.grade}||${item.name}`;
+
+    if (shouldHighlight && container === resultsGrid && lastDrawnItems.includes(key)) {
+        card.classList.add('newly-drawn');
+    }
+    if (item.grade.toUpperCase().includes('A')) {
+        card.classList.add('grade-a-border');
+    }
 
     const isSingleGrade = new Set(activeKujiItems.map(i => i.grade)).size === 1;
-    const isNewlyDrawn  = shouldHighlight && container === resultsGrid && lastDrawnItems.includes(key);
-    const isGradeA      = item.grade.toUpperCase().includes('A');
-
-    const card = document.createElement('div');
-    card.className = 'prize-card'
-        + (isNewlyDrawn ? ' newly-drawn' : '')
-        + (isGradeA     ? ' grade-a-border' : '');
+    const color = getGradeColor(item.grade);
 
     let html = '';
     if (container === resultsGrid && count >= 2) {
@@ -353,36 +361,36 @@ function renderResultCard(item, container, count = 1, shouldHighlight = true) {
     container.appendChild(card);
 }
 
+/* ======================
+   쿠지 로직
+   ====================== */
 
-/* =============================================
-   뽑기 로직
-   ============================================= */
-
-function pickItem() {
-    const totalWeight = activeKujiItems.reduce((sum, item) => sum + parseFloat(item.rate), 0);
-    let random = Math.random() * totalWeight;
-
-    for (const item of activeKujiItems) {
-        random -= parseFloat(item.rate);
-        if (random <= 0) return item;
+/** 가중치 기반 랜덤 아이템 1개 추출 */
+function pickRandomItem(items, totalWeight) {
+    let rand = Math.random() * totalWeight;
+    for (const item of items) {
+        rand -= parseFloat(item.rate);
+        if (rand <= 0) return item;
     }
-    return activeKujiItems[activeKujiItems.length - 1]; // 부동소수점 오차 대비 fallback
+    return items[items.length - 1]; // 부동소수점 오차 대비 폴백
 }
 
 function drawItems(times) {
     if (activeKujiItems.length === 0) return alert('상품 정보가 없습니다.');
 
-    probWrapper.style.display = 'none';
+    const totalWeight = activeKujiItems.reduce((sum, item) => sum + parseFloat(item.rate), 0);
+
+    probWrapper.style.display    = 'none';
     resultsWrapper.style.display = 'block';
 
-    modalTitleText.innerText = `${times}회 결과`;
+    modalTitleText.innerText   = `${times}회 결과`;
     modalResultsGrid.innerHTML = '';
     modalResultsGrid.classList.toggle('is-10-pull', times === 10);
 
     lastDrawnItems = [];
 
     for (let i = 0; i < times; i++) {
-        const item = pickItem();
+        const item = pickRandomItem(activeKujiItems, totalWeight);
         lastDrawnItems.push(`${item.grade}||${item.name}`);
         pullHistory.push(item);
         renderResultCard(item, modalResultsGrid, 1, false);
@@ -392,7 +400,6 @@ function drawItems(times) {
     totalSpent += currentPrice * times;
     updateStats();
 
-    // 1회 뽑기는 바로 결과 강조 표시, 복수는 모달로
     if (times === 1) {
         renderMainResultsGrid(true);
         scrollToNewlyDrawnCard();
@@ -406,28 +413,24 @@ function openAutoModal() {
     if (activeKujiItems.length === 0) return alert('상품 정보가 없습니다.');
 
     autoItemList.innerHTML = '';
-    selectedAutoItemKey = null;
+    selectedAutoItemKey    = null;
 
     const isSingleGrade = new Set(activeKujiItems.map(i => i.grade)).size === 1;
 
     activeKujiItems.forEach(item => {
-        const key = `${item.grade}||${item.name}`;
-        const gradePrefix = isSingleGrade ? '' : `[${item.grade}] `;
-
+        const key  = `${item.grade}||${item.name}`;
         const card = document.createElement('div');
         card.className = 'auto-item-card';
         card.innerHTML = `
             <img src="${item.image || 'https://via.placeholder.com/45'}" loading="lazy">
-            <div class="auto-item-name">${gradePrefix}${item.name}</div>
+            <div class="auto-item-name">${isSingleGrade ? '' : `[${item.grade}] `}${item.name}</div>
             <div class="auto-item-rate">${item.rate}%</div>
         `;
-
         card.addEventListener('click', () => {
             document.querySelectorAll('.auto-item-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
             selectedAutoItemKey = key;
         });
-
         autoItemList.appendChild(card);
     });
 
@@ -437,21 +440,23 @@ function openAutoModal() {
 function executeAutoDraw() {
     if (!selectedAutoItemKey) return alert('상품을 선택해주세요.');
 
-    const MAX_DRAWS = 1000;
     autoSetupModal.style.display = 'none';
 
-    probWrapper.style.display = 'none';
+    const MAX_DRAWS   = 1000;
+    const totalWeight = activeKujiItems.reduce((sum, item) => sum + parseFloat(item.rate), 0);
+    let count = 0;
+
+    probWrapper.style.display    = 'none';
     resultsWrapper.style.display = 'block';
 
-    let count = 0;
-    let found = false;
-
-    while (!found && count < MAX_DRAWS) {
-        const item = pickItem();
+    while (count < MAX_DRAWS) {
+        const item = pickRandomItem(activeKujiItems, totalWeight);
         pullHistory.push(item);
         count++;
-        if (`${item.grade}||${item.name}` === selectedAutoItemKey) found = true;
+        if (`${item.grade}||${item.name}` === selectedAutoItemKey) break;
     }
+
+    if (count >= MAX_DRAWS) alert('1000회를 돌렸지만 나오지 않아 강제 종료합니다.');
 
     totalPulls += count;
     totalSpent += currentPrice * count;
@@ -461,17 +466,14 @@ function executeAutoDraw() {
     renderMainResultsGrid();
     scrollToNewlyDrawnCard();
 
-    const resultMsg = found
-        ? `선택한 상품을 뽑기 위해 총 ${count}회를 돌렸습니다.\n${(currentPrice * count).toLocaleString()}엔을 지출했습니다.`
-        : `1000회를 돌렸지만 나오지 않아 강제 종료합니다.`;
-
-    setTimeout(() => alert(resultMsg), 150);
+    setTimeout(() => {
+        alert(`선택한 상품을 뽑기 위해 총 ${count}회를 돌렸습니다.\n${(currentPrice * count).toLocaleString()}엔을 지출했습니다.`);
+    }, 150);
 }
 
-
-/* =============================================
+/* ======================
    유틸
-   ============================================= */
+   ====================== */
 
 function updateStats() {
     statPulls.innerText = `${totalPulls}회`;
@@ -482,10 +484,9 @@ function scrollToNewlyDrawnCard() {
     setTimeout(() => {
         const card = document.querySelector('.newly-drawn');
         if (!card) return;
-
-        const rect = card.getBoundingClientRect();
-        const targetScrollY = rect.top + window.pageYOffset - window.innerHeight / 2 + rect.height / 2;
-        window.scrollTo({ top: targetScrollY, behavior: 'smooth' });
+        const rect   = card.getBoundingClientRect();
+        const target = rect.top + window.pageYOffset - window.innerHeight / 2 + rect.height / 2;
+        window.scrollTo({ top: target, behavior: 'smooth' });
     }, 100);
 }
 
@@ -496,32 +497,33 @@ function closeModal() {
 }
 
 function resetSimulation() {
-    totalPulls = 0;
-    totalSpent = 0;
-    pullHistory = [];
+    totalPulls    = 0;
+    totalSpent    = 0;
+    pullHistory   = [];
     lastDrawnItems = [];
 
     updateStats();
 
-    resultsGrid.innerHTML = '';
-    resultsWrapper.style.display = 'none';
-    probWrapper.style.display = 'block';
+    resultsGrid.innerHTML         = '';
+    resultsWrapper.style.display  = 'none';
     collectionBadge.style.display = 'none';
-    btnShare.style.display = 'none';
-    modalOverlay.style.display = 'none';
-    autoSetupModal.style.display = 'none';
+    btnShare.style.display        = 'none';
+    probWrapper.style.display     = 'block';
+
+    modalOverlay.style.display    = 'none';
+    autoSetupModal.style.display  = 'none';
 }
 
-
-/* =============================================
-   해시 라우팅
-   ============================================= */
+/* ======================
+   라우팅
+   ====================== */
 
 function handleRoute() {
-    const hash = window.location.hash.replace('#', '');
+    const raw  = window.location.hash.replace('#', '');
+    const hash = raw || 'chiikawa';
 
-    if (!hash) {
-        window.location.hash = 'chiikawa';
+    if (!raw) {
+        window.location.hash = hash;
         return;
     }
 
@@ -539,18 +541,17 @@ function handleRoute() {
 
 window.addEventListener('hashchange', handleRoute);
 
-
-/* =============================================
+/* ======================
    이벤트 바인딩
-   ============================================= */
+   ====================== */
 
 function setupEvents() {
-    const btnInfo       = document.getElementById('btn-info');
-    const tooltipBox    = document.getElementById('tooltip-box');
-    const infoWrapper   = document.getElementById('info-tooltip-wrapper');
+    const btnInfo         = document.getElementById('btn-info');
+    const tooltipBox      = document.getElementById('tooltip-box');
+    const infoWrapper     = document.getElementById('info-tooltip-wrapper');
     const btnTooltipClose = document.getElementById('btn-tooltip-close');
 
-    // 툴팁: 터치 환경에서는 클릭으로 토글
+    // 정보 툴팁 (터치 환경만 JS 토글, 마우스 환경은 CSS hover 처리)
     btnInfo.addEventListener('click', e => {
         e.stopPropagation();
         if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
@@ -568,14 +569,16 @@ function setupEvents() {
 
     // 마켓 탭
     document.querySelectorAll('.market-tab').forEach(btn => {
-        btn.addEventListener('click', () => {
-            window.location.hash = btn.dataset.market;
+        btn.addEventListener('click', e => {
+            window.location.hash = e.currentTarget.dataset.market;
         });
     });
 
     // 뽑기 버튼
     document.querySelectorAll('.draw-btn').forEach(btn => {
-        btn.addEventListener('click', () => drawItems(parseInt(btn.dataset.times, 10)));
+        btn.addEventListener('click', e => {
+            drawItems(parseInt(e.currentTarget.dataset.times, 10));
+        });
     });
 
     // 초기화
@@ -584,41 +587,64 @@ function setupEvents() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
-    // 결과 모달
+    // 뽑기 결과 모달
     btnModalClose.addEventListener('click', closeModal);
-    modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
+    modalOverlay.addEventListener('click', e => {
+        if (e.target === modalOverlay) closeModal();
+    });
 
     // 자동 뽑기 모달
     btnAuto.addEventListener('click', openAutoModal);
     btnAutoClose.addEventListener('click', () => { autoSetupModal.style.display = 'none'; });
-    autoSetupModal.addEventListener('click', e => { if (e.target === autoSetupModal) autoSetupModal.style.display = 'none'; });
+    autoSetupModal.addEventListener('click', e => {
+        if (e.target === autoSetupModal) autoSetupModal.style.display = 'none';
+    });
     btnAutoStart.addEventListener('click', executeAutoDraw);
 
     // X(트위터) 결과 공유
     btnShare.addEventListener('click', () => {
         if (pullHistory.length === 0) return;
 
-        const kujiName = kujiMetaMap[activeKujiId]?.name ?? '쿠지';
-        const total    = pullHistory.length;
+        const isJapanese = navigator.language?.startsWith('ja');
+        const meta       = kujiMetaMap[activeKujiId];
+        const total      = pullHistory.length;
 
-        const gradeCounts = pullHistory.reduce((acc, item) => {
-            acc[item.grade] = (acc[item.grade] || 0) + 1;
-            return acc;
-        }, {});
+        // 등급별 개수 집계
+        // grade(한국어 키)와 grade_jp(일본어 키)를 함께 저장
+        const gradeCounts = {};
+        pullHistory.forEach(item => {
+            const key = item.grade; // 등급 정렬용 기준은 항상 grade
+            if (!gradeCounts[key]) {
+                gradeCounts[key] = { count: 0, grade_jp: item.grade_jp || item.grade };
+            }
+            gradeCounts[key].count++;
+        });
 
-        const gradeString = Object.keys(gradeCounts).sort()
-            .map(g => `[${g.endsWith('상') ? g : g + '상'}] ${gradeCounts[g]}개`)
-            .join(', ');
+        const sortedGrades = Object.keys(gradeCounts).sort();
 
-        const text = `【나가노 온라인 쿠지 시뮬레이터】\n${kujiName} ${total}회 결과: ${gradeString}를 획득했습니다.\nhttps://nagano-kuji.vercel.app`;
+        let text;
+
+        if (isJapanese) {
+            const kujiNameJp = meta?.name_jp || meta?.name || 'くじ';
+            const gradeLines = sortedGrades
+                .map(g => `[${gradeCounts[g].grade_jp}] ×${gradeCounts[g].count}`)
+                .join('\n');
+            text = `【ナガノオンラインくじシミュレーター】\n「${kujiNameJp}」${total}回引いた結果\n${gradeLines}\nhttps://nagano-kuji.vercel.app`;
+        } else {
+            const kujiName   = meta?.name || '쿠지';
+            const gradeLines = sortedGrades
+                .map(g => `[${g}상] x${gradeCounts[g].count}`)
+                .join('\n');
+            text = `【나가노 온라인 쿠지 시뮬레이터】\n${kujiName} ${total}회 결과:\n${gradeLines}\nhttps://nagano-kuji.vercel.app`;
+        }
+
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
     });
 }
 
-
-/* =============================================
-   진입점
-   ============================================= */
+/* ======================
+   초기 실행
+   ====================== */
 
 async function init() {
     setupEvents();
