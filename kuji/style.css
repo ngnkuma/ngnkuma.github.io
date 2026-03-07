@@ -19,19 +19,13 @@
     font-family: 'KCC-Hanbit', sans-serif !important; 
     font-weight: 400 !important; 
     letter-spacing: -0.02em; 
-    touch-action: manipulation !important;
 }
 
-/* ✨ 번역기가 화면 찢고 나가는 가로 스크롤 완벽 철벽 방어 */
-html, body {
-    max-width: 100%;
-    overflow-x: hidden !important;
-}
-
+/* ✨ 근본 수정 1: 화면 뼈대 고정 */
 html {
     overflow-y: scroll; 
-    -webkit-text-size-adjust: 100%; /* ✨ 사파리 번역 시 폰트 커지면서 줌인되는 현상 차단 */
-    text-size-adjust: 100%;
+    overflow-x: hidden; 
+    max-width: 100vw;
 }
 
 /* 테마 */
@@ -47,6 +41,7 @@ body.theme-nagano {
     --theme-sub: #B4E8E6;
 }
 
+/* ✨ 근본 수정 2: 바디폭 절대 고정 */
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -54,19 +49,8 @@ body {
     transition: background-color 0.3s;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    top: 0 !important; 
-    position: relative; /* ✨ 가로 스크롤 방어 보조 */
-}
-
-/* ✨ 번역기 강제 태그 주입 방어 (레이아웃 파괴 원천 차단) */
-font, font > a {
-    word-break: break-all !important; /* ✨ 긴 외국어가 가로로 뚫고 나가지 못하게 강제 줄바꿈! */
-    white-space: normal !important;   /* ✨ 글자가 길어지면 밑으로 내려가게 허용 */
-    font-family: inherit !important;
-    color: inherit !important;
-}
-.goog-te-banner-frame, .goog-tooltip { 
-    display: none !important; 
+    overflow-x: hidden;
+    max-width: 100vw;
 }
 
 /* 헤더 및 툴팁 */
@@ -314,11 +298,15 @@ main { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
     border-radius: 20px; padding: 15px; display: flex; flex-direction: column; gap: 12px; z-index: 1000;
 }
 
-.bar-top-row { display: flex; justify-content: space-between; align-items: center; padding: 0 5px; }
+.bar-top-row { 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 0 5px; flex-wrap: wrap; gap: 4px; /* ✨ 구조적 유연함 추가 */
+}
 .top-actions { display: flex; gap: 8px; }
 
-.stats-mini { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; white-space: nowrap; }
-.stat-lbl, .stat-val { white-space: nowrap; word-break: keep-all; }
+/* ✨ 근본 수정 3: 번역기 폭주를 막는 글자 줄바꿈 허용 (nowrap 삭제) */
+.stats-mini { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; flex-wrap: wrap; }
+.stat-lbl, .stat-val { word-break: keep-all; }
 .stat-lbl { color: #888; font-size: 1.0rem;}
 .stat-val { color: var(--text-color); }
 .stat-val.highlight { color: var(--theme-main); }
@@ -326,7 +314,7 @@ main { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
 
 .auto-btn, .reset-btn {
     padding: 6px 12px; font-size: 1.0rem; border: none; border-radius: 6px; 
-    cursor: pointer; transition: 0.2s; white-space: nowrap;
+    cursor: pointer; transition: 0.2s; word-break: keep-all; /* ✨ nowrap 삭제 */
 }
 .auto-btn { color: var(--theme-main); background: var(--theme-sub); }
 .auto-btn:hover { filter: brightness(0.95); }
@@ -338,6 +326,8 @@ main { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
     flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
     padding: 8px 2px; color: #fff; background: var(--theme-main); border: none; border-radius: 10px; 
     cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.1s, filter 0.2s; line-height: 1.2;
+    min-width: 0; /* ✨ 플렉스 박스가 번역 글자에 의해 찢어지는 현상 구조적 방지 */
+    word-break: keep-all;
 }
 .draw-btn:hover { filter: brightness(0.9); transform: translateY(-2px); }
 .draw-btn:active { transform: translateY(1px); }

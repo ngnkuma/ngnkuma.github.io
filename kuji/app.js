@@ -709,32 +709,7 @@ function setupEvents() {
     }
 }
 
-
-/* 모바일 확대 방지 */
-
-function preventAppleZoom() {
-    // 1. 핀치 줌 (두 손가락) 차단
-    document.addEventListener('touchmove', function (event) {
-        // 웨일/크롬 스크롤 버그 해결: 터치가 2개 이상이거나, 사파리(scale)에서 줌을 시도할 때만 막음!
-        if ((event.touches && event.touches.length > 1) || (event.scale !== undefined && event.scale !== 1)) {
-            event.preventDefault();
-        }
-    }, { passive: false });
-
-    // 2. 더블 탭 (빠르게 두 번 터치) 줌 차단
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', function (event) {
-        let now = (new Date()).getTime();
-        if (now - lastTouchEnd <= 200) {
-            event.preventDefault();
-        }
-        lastTouchEnd = now;
-    }, { passive: false });
-}
-
-/* 초기화 실행 */
 async function init() {
-    preventAppleZoom();
     setupEvents();
     await fetchData();
     handleRoute(); 
