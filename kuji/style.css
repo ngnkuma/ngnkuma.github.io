@@ -1,7 +1,7 @@
 /* 폰트 설정 */
 @font-face {
     font-family: 'KCC-Hanbit';
-    src: url('font/KCC-Hanbit.ttf') format('truetype'); 
+    src: url('https://cdn.jsdelivr.net/gh/ngnkuma/ngnkuma.github.io/font/KCC-Hanbit.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
 }
