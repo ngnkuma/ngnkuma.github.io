@@ -46,6 +46,18 @@ body {
     transition: background-color 0.3s;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    top: 0 !important; /* ✨ 구글 번역기 상단바 여백 밀림 방지 */
+}
+
+/* ✨ 번역기 강제 태그 주입 방어 (레이아웃 파괴 원천 차단) */
+font, font > a {
+    word-break: inherit !important;
+    white-space: inherit !important;
+    font-family: inherit !important;
+    color: inherit !important;
+}
+.goog-te-banner-frame, .goog-tooltip { 
+    display: none !important; 
 }
 
 /* 헤더 및 툴팁 */
