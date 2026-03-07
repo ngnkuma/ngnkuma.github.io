@@ -9,13 +9,13 @@
     <meta property="og:description" content="치이카와마켓 & 나가노마켓 온라인 쿠지 확률 시뮬레이터">
     <meta property="og:image" content="https://cdn.jsdelivr.net/gh/ngnkuma/ngnkuma.github.io/kuji/img/link-preview.jpeg">
 
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="나가노 온라인 쿠지 시뮬레이터">
-<meta name="twitter:description" content="치이카와마켓 & 나가노마켓 온라인 쿠지 확률 시뮬레이터">
-<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/ngnkuma/ngnkuma.github.io/kuji/img/link-preview.jpeg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="나가노 온라인 쿠지 시뮬레이터">
+    <meta name="twitter:description" content="치이카와마켓 & 나가노마켓 온라인 쿠지 확률 시뮬레이터">
+    <meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/ngnkuma/ngnkuma.github.io/kuji/img/link-preview.jpeg">
 
     <title>나가노 온라인 쿠지 시뮬레이터</title>
-    
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,7 +25,7 @@
             <button class="market-tab active" data-market="chiikawa">치이카와마켓</button>
             <button class="market-tab" data-market="nagano">나가노마켓</button>
         </div>
-        
+
         <div class="info-tooltip-wrapper" id="info-tooltip-wrapper">
             <button class="info-btn" id="btn-info">?</button>
             <div class="tooltip-box" id="tooltip-box">
@@ -39,32 +39,31 @@
         </div>
     </header>
 
+    <!-- 홈 화면 -->
     <div id="screen-home">
         <main>
-            <div class="kuji-selector-wrapper" style="display: none;">
-                <select id="kuji-select"></select>
-            </div>
             <div id="kuji-list-grid" class="kuji-list-grid"></div>
             <p class="list-notice">최근 12개까지 제공됩니다.</p>
         </main>
     </div>
 
+    <!-- 뽑기 화면 -->
     <div id="screen-gacha" style="display: none;">
         <main>
             <div class="content-container">
-                <div id="prob-wrapper" style="position: relative;">
+                <div id="prob-wrapper">
                     <a id="kuji-link-badge" class="collection-badge link-badge" target="_blank" style="display: none;">상세 ❯</a>
                     <div id="probability-table" class="probability-table"></div>
                 </div>
-                
-                <div id="results-wrapper" style="position: relative; display: none;">
+
+                <div id="results-wrapper" style="display: none;">
                     <div class="badges-wrapper">
-    <button id="btn-share" class="collection-badge share-badge" style="display: none;">
-        <svg viewBox="0 0 24 24" aria-hidden="true" class="x-icon">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
-        </svg>
-        결과 공유
-    </button>
+                        <button id="btn-share" class="collection-badge share-badge" style="display: none;">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" class="x-icon">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                            </svg>
+                            결과 공유
+                        </button>
                         <div id="collection-badge" class="collection-badge" style="display: none;"></div>
                     </div>
                     <div id="results-grid" class="results-grid"></div>
@@ -75,9 +74,11 @@
         <div class="floating-bottom-bar">
             <div class="bar-top-row">
                 <div class="stats-mini">
-                    <span class="stat-lbl">횟수</span> <span class="stat-val" id="total-pulls">0회</span>
+                    <span class="stat-lbl">횟수</span>
+                    <span class="stat-val" id="total-pulls">0회</span>
                     <span class="stat-separator">|</span>
-                    <span class="stat-lbl">지출</span> <span class="stat-val highlight" id="total-spent">0엔</span>
+                    <span class="stat-lbl">지출</span>
+                    <span class="stat-val highlight" id="total-spent">0엔</span>
                 </div>
                 <div class="top-actions">
                     <button class="auto-btn" id="btn-auto">자동</button>
@@ -93,6 +94,7 @@
         </div>
     </div>
 
+    <!-- 결과 모달 -->
     <div id="result-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h2 id="modal-title-text" class="modal-title">결과</h2>
@@ -103,8 +105,9 @@
         </div>
     </div>
 
+    <!-- 자동 뽑기 설정 모달 -->
     <div id="auto-setup-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="max-height: 85vh;">
+        <div class="modal-content">
             <h2 class="modal-title">선택한 상품이 나올 때까지<br>자동으로 돌립니다.</h2>
             <div id="auto-item-list" class="auto-item-list"></div>
             <div class="modal-actions">
@@ -114,6 +117,6 @@
         </div>
     </div>
 
-<script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
