@@ -633,7 +633,7 @@ function setupEvents() {
         } else {
             const kujiName   = meta?.name || '쿠지';
             const gradeLines = sortedGrades
-                .map(g => `[${g}상] x${gradeCounts[g].count}`)
+                .map(g => `[${g}] x${gradeCounts[g].count}`)
                 .join('\n');
             text = `【나가노 온라인 쿠지 시뮬레이터】\n${kujiName} ${total}회 결과:\n${gradeLines}\nhttps://nagano-kuji.vercel.app`;
         }
