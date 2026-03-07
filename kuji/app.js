@@ -709,6 +709,9 @@ function setupEvents() {
     }
 }
 
+
+/* 모바일 확대 방지 */
+
 document.documentElement.addEventListener('touchstart', function (event) {
      if (event.touches.length > 1) {
           event.preventDefault(); 
@@ -719,7 +722,7 @@ var lastTouchEnd = 0;
 
 document.documentElement.addEventListener('touchend', function (event) {
      var now = (new Date()).getTime();
-     if (now - lastTouchEnd <= 300) {
+     if (now - lastTouchEnd <= 200) {
           event.preventDefault(); 
         } lastTouchEnd = now; 
     }, false);

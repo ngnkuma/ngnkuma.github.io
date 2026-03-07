@@ -440,5 +440,3 @@ main { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
     .prize-name { font-size: 0.65rem; }
 }
 
-/* ios 확대 방지 */
-html{ touch-action: pan-y; }
