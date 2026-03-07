@@ -19,15 +19,17 @@
     font-family: 'KCC-Hanbit', sans-serif !important; 
     font-weight: 400 !important; 
     letter-spacing: -0.02em; 
-    touch-action: manipulation !important;
+}
+
+/* ✨ 번역기 방어: 가로 스크롤 절대 금지 */
+html, body {
+    width: 100%;
+    overflow-x: hidden;
+    margin: 0; padding: 0;
 }
 
 html {
     overflow-y: scroll; 
-    overflow-x: hidden; 
-    /* ✨ 사파리 번역 시 지멋대로 글씨 키우면서 화면 줌인하는 것 원천 차단 */
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
 }
 
 /* 테마 */
@@ -46,25 +48,27 @@ body.theme-nagano {
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
-    margin: 0; padding: 0; padding-bottom: 140px; 
+    padding-bottom: 140px; 
     transition: background-color 0.3s;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    top: 0 !important; /* ✨ 구글 번역기 상단바 여백 밀림 방지 */
+    /* ✨ 번역기 방어: 구글 번역기 상단바 강제 여백 방지 */
+    top: 0 !important; 
 }
 
-/* ✨ 번역기 강제 태그 주입 방어 (레이아웃 파괴 원천 차단) */
+/* ✨ 번역기 방어: 번역기가 주입하는 <font> 태그 강제 상속 (레이아웃 파괴 방지) */
 font, font > a {
     word-break: inherit !important;
     white-space: inherit !important;
     font-family: inherit !important;
     color: inherit !important;
-    /* ✨ 사파리가 억지로 주입한 번역 태그에서 줌이 뚫리는 버그 암살 */
-    touch-action: manipulation !important; 
 }
+
+/* ✨ 번역기 방어: 구글 번역기 원본 텍스트 팝업 숨기기 */
 .goog-te-banner-frame, .goog-tooltip { 
     display: none !important; 
 }
+
 
 /* 헤더 및 툴팁 */
 header {
