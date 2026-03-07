@@ -90,6 +90,11 @@ header {
 .info-btn:hover { background: #d0d5df; }
 
 /* 툴팁 */
+
+font {
+    font-family: inherit !important;
+}
+
 .tooltip-box, .tooltip-box * {
     font-family: 'Pretendard', sans-serif !important;
 }
@@ -107,7 +112,15 @@ header {
     width: 12px; height: 12px; background: #2b2d31; transform: rotate(45deg);
 }
 
-.tooltip-box p { display: block !important; margin: 0 0 12px 0; color: #ddd; word-break: keep-all; line-height: 1.6; }
+.tooltip-box p { 
+    display: block !important; 
+    margin: 0 0 12px 0; 
+    color: #ddd; 
+    word-break: break-word; 
+    overflow-wrap: break-word; // 번역 시 넘침 방지
+    line-height: 1.6; 
+}
+
 .tooltip-box p span { display: inline !important; }
 .tooltip-box p .num { display: inline-block !important; color: #fff; margin-right: 4px; font-weight: bold !important; }
 .tooltip-box p .highlight { color: #FFFED9 !important; font-weight: bold !important; }
