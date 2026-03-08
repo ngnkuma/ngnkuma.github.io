@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nagano-kuji.vercel.app/">
+    <meta property="og:description" content="치이카와마켓 & 나가노마켓 온라인 쿠지 확률 시뮬레이터">
+    <meta property="og:image" content="https://cdn.jsdelivr.net/gh/ngnkuma/ngnkuma.github.io/kuji/img/link-preview.jpeg">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="나가노 온라인 쿠지 시뮬레이터">
+    <meta name="twitter:description" content="치이카와마켓 & 나가노마켓 온라인 쿠지 확률 시뮬레이터">
+    <meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/ngnkuma/ngnkuma.github.io/kuji/img/link-preview.jpeg">
+
+    <title>나가노 온라인 쿠지 시뮬레이터</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="market-tabs">
+            <button class="market-tab active" data-market="chiikawa">치이카와마켓</button>
+            <button class="market-tab" data-market="nagano">나가노마켓</button>
+        </div>
+
+        <div class="info-tooltip-wrapper" id="info-tooltip-wrapper">
+            <button class="info-btn" id="btn-info">?</button>
+            <div class="tooltip-box" id="tooltip-box">
+                <p><span class="num">1.</span> 이 사이트는 마켓의 <span class="highlight">온라인 쿠지 확률을 체험해보기 위한 시뮬레이션 사이트</span>입니다.</p>
+                <p><span class="num">2.</span> 실제 쿠지는 실시간 재고량에 따라 확률이 변동되는 시스템으로, 표기된 확률은 쿠지가 발매된 시점에서의 확률입니다. 이 시뮬레이터는 실시간 재고량과 같은 외부 요소를 제외하고 <span class="highlight">표기 확률만을 적용했으므로 실제 확률과는 상이</span>합니다.</p>
+                <div class="tooltip-footer">
+                    <span class="tooltip-close-btn" id="btn-tooltip-close">✕</span>
+                    <span>제작: 계피 (X @gyepizz)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 홈 화면 -->
+    <div id="screen-home">
+        <main>
+            <div id="kuji-list-grid" class="kuji-list-grid"></div>
+            <p class="list-notice">최근 12개까지 제공됩니다.</p>
+        </main>
+    </div>
+
+    <!-- 뽑기 화면 -->
+    <div id="screen-gacha" class="hidden">
+        <main>
+            <div class="content-container">
+                <div id="prob-wrapper">
+                    <a id="kuji-link-badge" class="collection-badge link-badge hidden" target="_blank">상세 ❯</a>
+                    <div id="probability-table" class="probability-table"></div>
+                </div>
+
+                <div id="results-wrapper" class="hidden">
+                    <div class="badges-wrapper">
+                        <button id="btn-share" class="collection-badge share-badge hidden">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" class="x-icon">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                            </svg>
+                            Post
+                        </button>
+                        <div id="collection-badge" class="collection-badge hidden"></div>
+                    </div>
+                    <div id="results-grid" class="results-grid"></div>
+                </div>
+            </div>
+        </main>
+
+        <div class="floating-bottom-bar">
+            <div class="bar-top-row">
+                <div class="stats-mini">
+                    <span class="stat-lbl">횟수</span>
+                    <span class="stat-val" id="total-pulls">0회</span>
+                    <span class="stat-separator">|</span>
+                    <span class="stat-lbl">지출</span>
+                    <span class="stat-val highlight" id="total-spent">0엔</span>
+                </div>
+                <div class="top-actions">
+                    <button class="auto-btn" id="btn-auto">Auto</button>
+                    <button class="reset-btn" id="btn-reset">Reset</button>
+                </div>
+            </div>
+            <div class="draw-controls-mini">
+                <button class="draw-btn" data-times="1" id="btn-draw-1"></button>
+                <button class="draw-btn" data-times="3" id="btn-draw-3"></button>
+                <button class="draw-btn" data-times="5" id="btn-draw-5"></button>
+                <button class="draw-btn" data-times="10" id="btn-draw-10"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 결과 -->
+    <div id="result-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 id="modal-title-text" class="modal-title">결과</h2>
+            <div id="modal-results-grid" class="modal-grid"></div>
+            <div class="modal-actions">
+                <button id="btn-modal-close" class="modal-btn close">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 자동 뽑기 설정 -->
+    <div id="auto-setup-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="modal-title">선택한 상품이 나올 때까지<br>자동으로 돌립니다.</h2>
+            <div id="auto-item-list" class="auto-item-list"></div>
+            <div class="modal-actions">
+                <button id="btn-auto-close" class="modal-btn close">닫기</button>
+                <button id="btn-auto-start" class="modal-btn primary">실행</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
