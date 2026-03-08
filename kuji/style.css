@@ -802,6 +802,7 @@ header {
 .modal-btn.primary {
     background: var(--theme-main);
     color: #fff;
+    font-size: 0.85rem;
 }
 
 .modal-btn.primary:hover {
@@ -844,14 +845,14 @@ header {
 
 .auto-item-name {
     flex: 1;
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: var(--text-color);
     word-break: break-all;
     line-height: 1.2;
 }
 
 .auto-item-rate {
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: #888;
 }
 
