@@ -107,11 +107,14 @@ function pickRandomItem(items, totalWeight) {
 
  
 
+const SHEET_ID   = '1MACn2iw20UAQr60yjZQENkNdDhunZ95R8sfJ-EQFipo';
+const SHEET_BASE = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=`;
+
 async function fetchData() {
     try {
         const [chiikawaRes, naganoRes] = await Promise.all([
-            fetch('data/chiikawa.csv'),
-            fetch('data/nagano.csv'),
+            fetch(SHEET_BASE + 'chiikawa'),
+            fetch(SHEET_BASE + 'nagano'),
         ]);
 
         const [chiikawaText, naganoText] = await Promise.all([
