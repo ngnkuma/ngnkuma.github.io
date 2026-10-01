@@ -10,7 +10,7 @@
 <div class="container">
 
   <div class="header">
-    <h1><span>짐패스</span> 자동 입력 (PC 전용)</h1>
+    <h1><span>짐패스</span> 자동 입력</h1>
   </div>
 
   <div class="card">
@@ -231,7 +231,7 @@ function renderPreview(parsed) {
 async function translateAndRefresh(parsed) {
   for (let i = 0; i < parsed.items.length; i++) {
     var it = parsed.items[i];
-    if (!it.productName || it.enName) continue; 
+    if (!it.productName || it.enName) continue; // 이미 번역되었거나 이름이 없으면 패스
     
     try {
       var nameEl = document.getElementById("item-name-" + i);
@@ -244,6 +244,11 @@ async function translateAndRefresh(parsed) {
       
       // 번역 결과 추출
       var translated = data[0].map(function(x){ return x[0]; }).join("");
+
+      // 오역 보정
+      translated = translated.replace(/Chikawa/gi, "Chiikawa");
+      translated = translated.replace(/Rabbit/gi, "Usagi"); 
+
       it.enName = translated.replace(/"/g, "").trim(); 
 
       // 미리보기 UI 즉시 업데이트
