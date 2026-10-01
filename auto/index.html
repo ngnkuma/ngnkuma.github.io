@@ -214,7 +214,7 @@ function renderPreview(parsed) {
           ' onerror="if(this.dataset.fb){this.style.opacity=0.2;}else{this.dataset.fb=1;this.src=\'' + cfg.imageFallbackUrl(it.code) + '\';}">' +
           '<div class="item-info">' +
             '<div class="item-name" id="item-name-' + i + '" style="' + nameStyle + '">' + displayName + '</div>' +
-            '<div class="item-meta">¥' + Number(it.price).toLocaleString() + ' × ' + it.qty + '개 &nbsp;|&nbsp; 코드: ' + it.code + '</div>' +
+            '<div class="item-meta">¥' + Number(it.price).toLocaleString() + ' × ' + it.qty + '개</div>' +
           '</div>' +
           (it.trackingNo ? '<span class="item-tracking">#' + it.trackingNo + '</span>' : '') +
         '</div>' +
