@@ -361,7 +361,7 @@ function buildCode(pd) {
 
   L.push('var se=document.getElementById("shipping");');
   L.push('if(se){se.value="' + shippingVal + '";se.dispatchEvent(new Event("input",{bubbles:true}));}');
-  L.push('alert(items.length+"개 상품이 입력되었습니다.\n다시 한 번 검토해주세요.");');
+  L.push('alert(items.length+"개 상품이 입력되었습니다. 다시 한 번 검토해주세요.");');
 
   L.push('})();');
   return L.join("\n");
