@@ -227,7 +227,7 @@ function renderPreview(parsed) {
   document.getElementById("preview-section").style.display = "block";
 }
 
-// 번역
+// ── 번역 ─────────────────────────────────────────
 async function translateAndRefresh(parsed) {
   for (let i = 0; i < parsed.items.length; i++) {
     var it = parsed.items[i];
@@ -248,6 +248,10 @@ async function translateAndRefresh(parsed) {
       // 오역 보정
       translated = translated.replace(/Chikawa/gi, "Chiikawa");
       translated = translated.replace(/Rabbit/gi, "Usagi"); 
+      translated = translated.replace(/sea otter/gi, "Rakko"); 
+      translated = translated.replace(/flying squirrel/gi, "Momonga"); 
+      translated = translated.replace(/Used Bookstore/gi, "Furuhonya"); 
+
 
       it.enName = translated.replace(/"/g, "").trim(); 
 
