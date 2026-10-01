@@ -231,7 +231,7 @@ function renderPreview(parsed) {
 async function translateAndRefresh(parsed) {
   for (let i = 0; i < parsed.items.length; i++) {
     var it = parsed.items[i];
-    if (!it.productName || it.enName) continue; // 이미 번역되었거나 이름이 없으면 패스
+    if (!it.productName || it.enName) continue; 
     
     try {
       var nameEl = document.getElementById("item-name-" + i);
@@ -281,22 +281,21 @@ function buildCode(pd) {
   var itemsData = [];
   for (var i = 0; i < pd.items.length; i++) {
     var it = pd.items[i];
-    
     var finalName = it.enName || it.productName || "";
     
     itemsData.push({
-      orderNo:    pd.orderNo,
-      code:       it.code,
-      name:       finalName,
-      price:      it.price,
-      qty:        it.qty,
+      orderNo:          pd.orderNo,
+      code:             it.code,
+      name:             finalName,
+      price:            it.price,
+      qty:              it.qty,
       url:              cfg.productUrl(it.code),
       imageUrl:         cfg.imageUrl(it.code),
       imageFallbackUrl: cfg.imageFallbackUrl(it.code),
       trackingNo:       it.trackingNo,
-      carrier:    it.carrier,
-      catVal:     it.catVal  || "",
-      catVal2:    it.catVal2 || ""
+      carrier:          it.carrier,
+      catVal:           it.catVal  || "",
+      catVal2:          it.catVal2 || ""
     });
   }
 
@@ -315,18 +314,28 @@ function buildCode(pd) {
   L.push('  if(gl.querySelectorAll("li").length===bc)break;');
   L.push('}');
 
+  L.push('function fireEvents(el, val){');
+  L.push('  if(!el) return;');
+  L.push('  if(val !== undefined) el.value = val;');
+  L.push('  ["input","change","keyup","keydown","blur"].forEach(function(evt){');
+  L.push('    el.dispatchEvent(new Event(evt, {bubbles:true}));');
+  L.push('  });');
+  L.push('  if(window.jQuery && window.jQuery(el).length){');
+  L.push('    window.jQuery(el).trigger("input").trigger("change").trigger("keyup").trigger("blur");');
+  L.push('  }');
+  L.push('}');
+
   L.push('var rows=gl.querySelectorAll("li");');
   L.push('items.forEach(function(d,i){');
   L.push('  var li=rows[i];if(!li)return;');
-  L.push('  function sv(s,v){var e=li.querySelector(s);if(e){e.value=v;e.dispatchEvent(new Event("input",{bubbles:true}));}}');
-  L.push('  sv(".orderNo",d.orderNo);');
-  L.push('  sv(".goodsName",d.name);'); 
-  L.push('  sv(".price",d.price);');
-  L.push('  sv(".quantity",d.qty);');
-  L.push('  sv(".url",d.url);');
-  L.push('  sv(".trackingNo",d.trackingNo);');
+  L.push('  fireEvents(li.querySelector(".orderNo"), d.orderNo);');
+  L.push('  fireEvents(li.querySelector(".goodsName"), d.name);'); 
+  L.push('  fireEvents(li.querySelector(".price"), d.price);');
+  L.push('  fireEvents(li.querySelector(".quantity"), d.qty);');
+  L.push('  fireEvents(li.querySelector(".url"), d.url);');
+  L.push('  fireEvents(li.querySelector(".trackingNo"), d.trackingNo);');
   L.push('  var cs=li.querySelector(".localDeliveryCode");');
-  L.push('  if(cs){cs.value=d.carrier;cs.dispatchEvent(new Event("change",{bubbles:true}));}');
+  L.push('  if(cs){cs.value=d.carrier;fireEvents(cs);}');
   L.push('  var tp=li.querySelector(".thumbnailFilePath");');
   L.push('  if(tp)tp.value=d.imageUrl;');
   L.push('  var tb=li.querySelector(".thumbnail");');
@@ -339,29 +348,45 @@ function buildCode(pd) {
   L.push('  }');
   L.push('});');
 
+  // 1차 카테고리
   L.push('setTimeout(function(){');
   L.push('  var r1=gl.querySelectorAll("li");');
   L.push('  items.forEach(function(d,i){');
   L.push('    if(!d.catVal)return;');
   L.push('    var li1=r1[i];if(!li1)return;');
   L.push('    var c1=li1.querySelector("select.category");');
-  L.push('    if(c1){c1.value=d.catVal;c1.dispatchEvent(new Event("change",{bubbles:true}));}');
+  L.push('    if(c1){c1.value=d.catVal;fireEvents(c1);}');
   L.push('  });');
   L.push('},300);');
 
+  // 2차 카테고리
   L.push('setTimeout(function(){');
   L.push('  var r2=gl.querySelectorAll("li");');
   L.push('  items.forEach(function(d,i){');
   L.push('    if(!d.catVal2)return;');
   L.push('    var li2=r2[i];if(!li2)return;');
   L.push('    var c2=li2.querySelector("select.category2");');
-  L.push('    if(c2){c2.value=d.catVal2;c2.dispatchEvent(new Event("change",{bubbles:true}));}');
+  L.push('    if(c2){c2.value=d.catVal2;fireEvents(c2);}');
   L.push('  });');
   L.push('},1500);');
 
-  L.push('var se=document.getElementById("shipping");');
-  L.push('if(se){se.value="' + shippingVal + '";se.dispatchEvent(new Event("input",{bubbles:true}));}');
-  L.push('alert(items.length+"개 상품이 입력되었습니다. 다시 한 번 검토해주세요.");');
+  // 계산
+  L.push('setTimeout(function(){');
+  L.push('  var se=document.getElementById("shipping") || document.querySelector(".shipping");');
+  L.push('  if(se){ fireEvents(se, "' + shippingVal + '"); }');
+  L.push('  var de=document.getElementById("discount") || document.querySelector(".discount");');
+  L.push('  if(de){ fireEvents(de, de.value || "0"); }');
+  L.push('  var te=document.getElementById("tax") || document.querySelector(".tax");');
+  L.push('  if(te){ fireEvents(te, te.value || "0"); }');
+  
+  L.push('  document.querySelectorAll(".price, .quantity").forEach(function(e){ fireEvents(e); });');
+  
+  L.push('  if(typeof calcTotal === "function") calcTotal();');
+  L.push('  if(typeof calcPrice === "function") calcPrice();');
+  L.push('  if(typeof calculateTotal === "function") calculateTotal();');
+  
+  L.push('  alert(items.length+"개 상품이 자동 입력되었습니다.\\n다시 한 번 검토해주세요.");');
+  L.push('}, 1800);');
 
   L.push('})();');
   return L.join("\n");
