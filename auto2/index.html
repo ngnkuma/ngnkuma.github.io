@@ -20,7 +20,7 @@
     </div>
   </div>
 
-  <!-- 사용방법 유튜브 영상 카드 (초기엔 숨김) -->
+  <!-- 사용방법 유튜브 영상 카드 -->
   <div class="card" id="guide-section" style="display: none; padding: 20px 24px;">
     <div class="card-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
       <span>이용방법</span>
@@ -29,7 +29,7 @@
 
 <!-- 유튜브 -->
     <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; border: 1px solid var(--border);">
-      <iframe src="https://www.youtube-nocookie.com/embed/oczoli6eT-o" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <iframe src="https://www.youtube-nocookie.com/embed/oczoli6eT-o?vq=hd1080" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
     </div>
 </div>
 
@@ -433,6 +433,8 @@ document.getElementById("guide-btn").addEventListener("click", function() {
   var guideSec = document.getElementById("guide-section");
   if (guideSec.style.display === "none" || guideSec.style.display === "") {
     guideSec.style.display = "block";
+    guideSec.style.animation = "none";
+    guideSec.style.animation = "fadeDown 0.4s ease both";
   } else {
     guideSec.style.display = "none";
   }
