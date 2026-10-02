@@ -202,8 +202,7 @@ function renderPreview(parsed) {
     }
     catHtml += '</div>';
 
-    var displayName = it.enName || it.productName || "(상품명 미확인)";
-    var nameStyle = it.enName ? 'color: var(--accent); font-weight: 600;' : '';
+var displayName = it.enName || it.productName || "(상품명 미확인)";
 
     html +=
       '<div class="item-row">' +
@@ -211,7 +210,8 @@ function renderPreview(parsed) {
           '<img class="item-thumb" src="' + cfg.imageUrl(it.code) + '"' +
           ' onerror="if(this.dataset.fb){this.style.opacity=0.2;}else{this.dataset.fb=1;this.src=\'' + cfg.imageFallbackUrl(it.code) + '\';}">' +
           '<div class="item-info">' +
-            '<div class="item-name" id="item-name-' + i + '" style="' + nameStyle + '">' + displayName + '</div>' +
+            '<div class="item-name" id="item-name-' + i + '">' + displayName + '</div>' +
+
             '<div class="item-meta">¥' + Number(it.price).toLocaleString() + ' × ' + it.qty + '개</div>' +
           '</div>' +
           (it.trackingNo ? '<span class="item-tracking">#' + it.trackingNo + '</span>' : '') +
@@ -256,8 +256,6 @@ async function translateAndRefresh(parsed) {
       // 미리보기 UI 즉시 업데이트
       if(nameEl) {
         nameEl.textContent = it.enName;
-        nameEl.style.color = "var(--accent)";
-        nameEl.style.fontWeight = "600";
       }
     } catch(e) {
       console.warn("Translation failed for", it.productName, e);
