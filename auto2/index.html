@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>짐패스 자동 입력</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+
+<!-- 헤더 영역 -->
+  <div class="header">
+    <h1><span>짐패스</span> 자동 입력</h1>
+    <div style="margin-top: 12px; display: flex; justify-content: center; gap: 8px;">
+      
+      <button id="guide-btn" style="display: inline-flex; align-items: center; font-size: 13px; font-weight: 500; background: #ffffff; border: 1px solid #e2e5e9; padding: 4px 12px; border-radius: 15px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: background 0.2s;" onmouseover="this.style.background='#fdf5f3'" onmouseout="this.style.background='#ffffff'">
+        이용방법
+      </button>
+    </div>
+  </div>
+
+  <!-- 사용방법 유튜브 영상 카드 (초기엔 숨김) -->
+  <div class="card" id="guide-section" style="display: none; padding: 20px 24px;">
+    <div class="card-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <span>이용방법</span>
+      <span id="close-guide-btn" style="cursor: pointer; font-size: 16px; color: #999;" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#999'">✕</span>
+    </div>
+
+<!-- 유튜브 -->
+    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 8px; border: 1px solid var(--border);">
+      <iframe src="https://www.youtube-nocookie.com/embed/YwYj3g-89Rs" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>
+
+  <div class="card">
+    <div class="card-label">주문내역 붙여넣기</div>
+    <textarea class="paste-area" id="paste-input"
+      placeholder="나가노/치이카와마켓 마이페이지 주문내역 → 주문번호 클릭 → 전체 복사하여 붙여넣기"></textarea>
+    <div class="debug-box" id="debug-box"></div>
+  </div>
+
+  <div class="card" id="preview-section">
+    <div class="card-label">미리보기</div>
+    <div class="preview-header">
+      <span class="order-badge" id="preview-order-no">—</span>
+      <span class="count-badge" id="preview-count">0개 상품</span>
+    </div>
+    <div class="item-list" id="item-list"></div>
+    <div class="summary-row" id="summary-row"></div>
+    <button class="gen-btn" id="gen-btn">코드 복사하기</button>
+  </div>
+
+</div>
+
+<script>
+var parsedData = null;
+
+// ── 마켓 설정 ─────────────────────────────────────────
+var MARKETS = {
+  nagano: {
+    label:      "나가노마켓",
+    productUrl: function(c){ return "https://nagano-market.jp/products/" + c; },
+    imageUrl:         function(c){ return "https://nagano-market.jp/cdn/shop/files/" + c + "_1_700x.jpg"; },
+    imageFallbackUrl: function(c){ return "https://nagano-market.jp/cdn/shop/files/" + c + "_700x.jpg"; }
+  },
+  chiikawa: {
+    label:      "치이카와마켓",
+    productUrl: function(c){ return "https://chiikawamarket.jp/products/" + c; },
+    imageUrl:         function(c){ return "https://chiikawamarket.jp/cdn/shop/files/" + c + "_1_700x.jpg"; },
+    imageFallbackUrl: function(c){ return "https://chiikawamarket.jp/cdn/shop/files/" + c + "_700x.jpg"; }
+  }
+};
+
+// ── 카테고리 ──────────────────────────────────────────
+var CATS = [
+  { label: "인형류/마스코트", catVal: "170", catVal2: "174" },
+  { label: "잡화/문구",       catVal: "204", catVal2: "205" },
+  { label: "키링",            catVal: "204", catVal2: "240" },
+  { label: "의류",            catVal: "3",   catVal2: "4"   },
+  { label: "직접선택",        catVal: "",    catVal2: ""    }
+];
+
+// ── 파싱 유틸 ─────────────────────────────────────────
+function detectMarket(text) {
+  var m = text.match(/((?:NAGANO|CHIIKAWA)-\d+)/i);
+  if (m) {
+    var o = m[1].toUpperCase();
+    if (o.indexOf("CHIIKAWA") !== -1) return "chiikawa";
+    if (o.indexOf("NAGANO")   !== -1) return "nagano";
+  }
+  if (/chiikawamarket\.jp/i.test(text)) return "chiikawa";
+  if (/nagano-market\.jp/i.test(text))  return "nagano";
+  return null;
+}
+
+function detectCarrier(str) {
+  var s = str.toLowerCase();
+  if (s.indexOf("yamato")   !== -1) return "yamato";
+  if (s.indexOf("sagawa")   !== -1) return "sagawa";
+  if (s.indexOf("japan")    !== -1) return "japanpost";
+  if (s.indexOf("amazon")   !== -1) return "amazonjp";
+  if (s.indexOf("willport") !== -1) return "willport";
+  if (s.indexOf("rakuten")  !== -1) return "rakuten";
+  if (s.indexOf("fukutsu")  !== -1) return "fukutsu";
+  if (s.indexOf("seino")    !== -1) return "seino";
+  if (s.indexOf("ecohai")   !== -1) return "ecohai";
+  return "other";
+}
+
+function parseOrderText(text) {
+  var orderMatch = text.match(/((?:NAGANO|CHIIKAWA)-\d+)/i);
+  var orderNo    = orderMatch ? orderMatch[1] : "";
+  var market     = detectMarket(text);
+
+  var lines = text.split(/\r?\n/)
+    .map(function(l){ return l.replace(/\t/g, " ").trim(); })
+    .filter(function(l){ return l.length > 0; });
+
+  var cutIdx = -1;
+  for (var k = 0; k < lines.length; k++) {
+    if (/^(小計|소계)/.test(lines[k])) { cutIdx = k; break; }
+  }
+  var data = cutIdx > -1 ? lines.slice(0, cutIdx) : lines;
+
+  var items = [];
+  for (var i = 0; i < data.length; i++) {
+    var m = data[i].match(/^N?(\d{10,14})[\s\u3000]+[¥￥]([0-9,]+)[\s\u3000]+(\d+)/);
+    if (!m) continue;
+
+    var code  = m[1];
+    var price = m[2].replace(/,/g, "");
+    var qty   = m[3];
+    var productName = "", trackingNo = "", carrier = "yamato";
+
+    for (var j = i - 1; j >= Math.max(0, i - 8); j--) {
+      var prev = data[j];
+      var tm = prev.match(/(Yamato|Sagawa|Japan\s*Post|Amazon|Willport|Rakuten|Fukutsu|Seino|Ecohai)[^#]*#(\d+)/i);
+      if (tm) { carrier = detectCarrier(tm[1]); trackingNo = tm[2]; continue; }
+      if (/^発送日|^注文番号|^ご注文|商品名|商品コード|合計金額|荷物を追跡|同意|注意事項|商品に関/.test(prev)) continue;
+      if (!productName && /[\u3040-\u9FFF\u30A0-\u30FF]/.test(prev)) {
+        var cleaned = prev.replace(/_{2,}/g, "").trim();
+        if (cleaned.length > 0) productName = cleaned;
+      }
+    }
+
+    items.push({
+      code: code, productName: productName, enName: "",
+      price: price, qty: qty,
+      trackingNo: trackingNo, carrier: carrier,
+      catVal: "", catVal2: ""
+    });
+  }
+
+  var shipping = "0";
+  for (var s = 0; s < lines.length; s++) {
+    var sl = lines[s];
+    if (/^(送料|배송)/.test(sl) && !/추적|追跡/.test(sl)) {
+      var sm = sl.match(/[¥￥]([0-9,]+)/);
+      if (sm) { shipping = sm[1].replace(/,/g, ""); break; }
+    }
+  }
+
+  var total = "0";
+  for (var t = 0; t < lines.length; t++) {
+    if (/^(合計金額|총계|합계)/.test(lines[t])) {
+      var tm2 = lines[t].match(/[¥￥]([0-9,]+)/);
+      if (tm2) { total = tm2[1].replace(/,/g, ""); break; }
+    }
+  }
+
+  return {
+    orderNo: orderNo, market: market,
+    items: items, shipping: shipping, total: total,
+    debugLines: data
+  };
+}
+
+// UI 렌더 및 번역
+function showDebug(parsed) {
+  var box = document.getElementById("debug-box");
+  if (parsed.items.length > 0) { box.style.display = "none"; return; }
+  
+  box.style.display = "block";
+  box.innerHTML = "<b>⚠️ 인식 실패!</b><br>PC 버전의 주문 상세 페이지를 붙여넣으세요.";
+}
+
+function setCat(idx, catIdx) {
+  parsedData.items[idx].catVal  = CATS[catIdx].catVal;
+  parsedData.items[idx].catVal2 = CATS[catIdx].catVal2;
+  var btns = document.querySelectorAll(".cat-btns[data-idx='" + idx + "'] .cat-btn");
+  for (var b = 0; b < btns.length; b++) btns[b].classList.toggle("selected", b === catIdx);
+}
+
+function renderSummary(parsed) {
+  var itemTotal = 0;
+  for (var i = 0; i < parsed.items.length; i++) {
+    itemTotal += Number(parsed.items[i].price) * Number(parsed.items[i].qty);
+  }
+  var shipping = Number(parsed.shipping);
+  var total    = Number(parsed.total) || (itemTotal + shipping);
+  document.getElementById("summary-row").innerHTML =
+    '<div class="summary-item"><span>상품 합계</span><span>¥' + itemTotal.toLocaleString() + '</span></div>' +
+    '<div class="summary-item"><span>배송비</span><span>¥' + shipping.toLocaleString() + '</span></div>' +
+    '<div class="summary-item total"><span>총 합계</span><span>¥' + total.toLocaleString() + '</span></div>';
+}
+
+function renderPreview(parsed) {
+  var cfg = MARKETS[parsed.market] || MARKETS.nagano;
+  document.getElementById("preview-order-no").textContent = "주문번호: " + (parsed.orderNo || "미확인");
+  document.getElementById("preview-count").textContent    = parsed.items.length + "개 상품";
+
+  var html = "";
+  for (var i = 0; i < parsed.items.length; i++) {
+    var it = parsed.items[i];
+
+    var catHtml = '<div class="cat-btns" data-idx="' + i + '">';
+    for (var c = 0; c < CATS.length; c++) {
+      var sel = (it.catVal === CATS[c].catVal && it.catVal2 === CATS[c].catVal2) ? " selected" : "";
+      catHtml += '<button class="cat-btn' + sel + '" onclick="setCat(' + i + ',' + c + ')">' + CATS[c].label + '</button>';
+    }
+    catHtml += '</div>';
+
+    var displayName = it.enName || it.productName || "(상품명 미확인)";
+    var nameStyle = it.enName ? 'color: var(--accent); font-weight: 600;' : '';
+
+    html +=
+      '<div class="item-row">' +
+        '<div class="item-top">' +
+          '<img class="item-thumb" src="' + cfg.imageUrl(it.code) + '"' +
+          ' onerror="if(this.dataset.fb){this.style.opacity=0.2;}else{this.dataset.fb=1;this.src=\'' + cfg.imageFallbackUrl(it.code) + '\';}">' +
+          '<div class="item-info">' +
+            '<div class="item-name" id="item-name-' + i + '" style="' + nameStyle + '">' + displayName + '</div>' +
+            '<div class="item-meta">¥' + Number(it.price).toLocaleString() + ' × ' + it.qty + '개</div>' +
+          '</div>' +
+          (it.trackingNo ? '<span class="item-tracking">#' + it.trackingNo + '</span>' : '') +
+        '</div>' +
+        catHtml +
+      '</div>';
+  }
+
+  document.getElementById("item-list").innerHTML = html;
+  renderSummary(parsed);
+  document.getElementById("preview-section").style.display = "block";
+}
+
+// ── 번역 ─────────────────────────────────────────
+async function translateAndRefresh(parsed) {
+  for (let i = 0; i < parsed.items.length; i++) {
+    var it = parsed.items[i];
+    if (!it.productName || it.enName) continue; // 이미 번역되었거나 이름이 없으면 패스
+    
+    try {
+      var nameEl = document.getElementById("item-name-" + i);
+      if(nameEl) nameEl.innerHTML = it.productName + ' <span style="font-size:10px; color:#999; font-weight:normal;">(영문 변환 중...)</span>';
+
+      // 구글 번역기 API 호출
+      var url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=ja&tl=en&dt=t&q=" + encodeURIComponent(it.productName);
+      var res = await fetch(url);
+      var data = await res.json();
+      
+      // 번역 결과 추출
+      var translated = data[0].map(function(x){ return x[0]; }).join("");
+
+      // 오역 보정
+      translated = translated.replace(/Chikawa/gi, "Chiikawa");
+      translated = translated.replace(/Rabbit/gi, "Usagi"); 
+      translated = translated.replace(/sea otter/gi, "Rakko"); 
+      translated = translated.replace(/flying squirrel/gi, "Momonga"); 
+      translated = translated.replace(/Used Bookstore/gi, "Furuhonya"); 
+
+
+      it.enName = translated.replace(/"/g, "").trim(); 
+
+      // 미리보기 UI 즉시 업데이트
+      if(nameEl) {
+        nameEl.textContent = it.enName;
+        nameEl.style.color = "var(--accent)";
+        nameEl.style.fontWeight = "600";
+      }
+    } catch(e) {
+      console.warn("Translation failed for", it.productName, e);
+      if(nameEl) nameEl.textContent = it.productName + " (영문 변환 실패)";
+    }
+  }
+}
+
+document.getElementById("paste-input").addEventListener("input", function() {
+  var text = this.value.trim();
+  document.getElementById("debug-box").style.display       = "none";
+  document.getElementById("preview-section").style.display = "none";
+  parsedData = null;
+  if (!text) return;
+  parsedData = parseOrderText(text);
+  showDebug(parsedData);
+  if (parsedData.items.length > 0) {
+    renderPreview(parsedData);
+    translateAndRefresh(parsedData); // 번역
+  }
+});
+
+// 콘솔 코드 생성 
+function buildCode(pd) {
+  var market   = pd.market || "nagano";
+  var cfg      = MARKETS[market];
+
+  var itemsData = [];
+  for (var i = 0; i < pd.items.length; i++) {
+    var it = pd.items[i];
+    var finalName = it.enName || it.productName || "";
+    
+    itemsData.push({
+      orderNo:          pd.orderNo,
+      code:             it.code,
+      name:             finalName,
+      price:            it.price,
+      qty:              it.qty,
+      url:              cfg.productUrl(it.code),
+      imageUrl:         cfg.imageUrl(it.code),
+      imageFallbackUrl: cfg.imageFallbackUrl(it.code),
+      trackingNo:       it.trackingNo,
+      carrier:          it.carrier,
+      catVal:           it.catVal  || "",
+      catVal2:          it.catVal2 || ""
+    });
+  }
+
+  var dataJson    = JSON.stringify(itemsData, null, 2);
+  var shippingVal = pd.shipping || "0";
+
+  var L = [];
+  L.push("(function(){");
+  L.push("var items=" + dataJson + ";");
+
+  L.push('var gl=document.getElementById("goods");');
+  L.push('if(!gl){alert("짐패스 신청서 페이지에서 실행해주세요.");return;}');
+  L.push('while(gl.querySelectorAll("li").length<items.length){');
+  L.push('  var bc=gl.querySelectorAll("li").length;');
+  L.push('  if(typeof addGoods==="function")addGoods();');
+  L.push('  if(gl.querySelectorAll("li").length===bc)break;');
+  L.push('}');
+
+  L.push('function fireEvents(el, val){');
+  L.push('  if(!el) return;');
+  L.push('  if(val !== undefined) el.value = val;');
+  L.push('  ["input","change","keyup","keydown","blur"].forEach(function(evt){');
+  L.push('    el.dispatchEvent(new Event(evt, {bubbles:true}));');
+  L.push('  });');
+  L.push('  if(window.jQuery && window.jQuery(el).length){');
+  L.push('    window.jQuery(el).trigger("input").trigger("change").trigger("keyup").trigger("blur");');
+  L.push('  }');
+  L.push('}');
+
+  L.push('var rows=gl.querySelectorAll("li");');
+  L.push('items.forEach(function(d,i){');
+  L.push('  var li=rows[i];if(!li)return;');
+  L.push('  fireEvents(li.querySelector(".orderNo"), d.orderNo);');
+  L.push('  fireEvents(li.querySelector(".goodsName"), d.name);'); 
+  L.push('  fireEvents(li.querySelector(".price"), d.price);');
+  L.push('  fireEvents(li.querySelector(".quantity"), d.qty);');
+  L.push('  fireEvents(li.querySelector(".url"), d.url);');
+  L.push('  fireEvents(li.querySelector(".trackingNo"), d.trackingNo);');
+  L.push('  var cs=li.querySelector(".localDeliveryCode");');
+  L.push('  if(cs){cs.value=d.carrier;fireEvents(cs);}');
+  L.push('  var tp=li.querySelector(".thumbnailFilePath");');
+  L.push('  if(tp)tp.value=d.imageUrl;');
+  L.push('  var tb=li.querySelector(".thumbnail");');
+  L.push('  if(tb){');
+  L.push('    tb.classList.remove("no_thumbnail");');
+  L.push('    var im=document.createElement("img");');
+  L.push('    im.src=d.imageUrl;im.style.maxWidth="120px";im.style.maxHeight="120px";im.style.objectFit="contain";');
+  L.push('    im.onerror=function(){if(!this.dataset.fb){this.dataset.fb=1;this.src=d.imageFallbackUrl;}};');
+  L.push('    tb.innerHTML="";tb.appendChild(im);');
+  L.push('  }');
+  L.push('});');
+
+  // 1차 카테고리
+  L.push('setTimeout(function(){');
+  L.push('  var r1=gl.querySelectorAll("li");');
+  L.push('  items.forEach(function(d,i){');
+  L.push('    if(!d.catVal)return;');
+  L.push('    var li1=r1[i];if(!li1)return;');
+  L.push('    var c1=li1.querySelector("select.category");');
+  L.push('    if(c1){c1.value=d.catVal;fireEvents(c1);}');
+  L.push('  });');
+  L.push('},300);');
+
+  // 2차 카테고리
+  L.push('setTimeout(function(){');
+  L.push('  var r2=gl.querySelectorAll("li");');
+  L.push('  items.forEach(function(d,i){');
+  L.push('    if(!d.catVal2)return;');
+  L.push('    var li2=r2[i];if(!li2)return;');
+  L.push('    var c2=li2.querySelector("select.category2");');
+  L.push('    if(c2){c2.value=d.catVal2;fireEvents(c2);}');
+  L.push('  });');
+  L.push('},1500);');
+
+  // 계산
+  L.push('setTimeout(function(){');
+  L.push('  var se=document.getElementById("shipping") || document.querySelector(".shipping");');
+  L.push('  if(se){ fireEvents(se, "' + shippingVal + '"); }');
+  L.push('  var de=document.getElementById("discount") || document.querySelector(".discount");');
+  L.push('  if(de){ fireEvents(de, de.value || "0"); }');
+  L.push('  var te=document.getElementById("tax") || document.querySelector(".tax");');
+  L.push('  if(te){ fireEvents(te, te.value || "0"); }');
+  
+  L.push('  document.querySelectorAll(".price, .quantity").forEach(function(e){ fireEvents(e); });');
+  
+  L.push('  if(typeof calcTotal === "function") calcTotal();');
+  L.push('  if(typeof calcPrice === "function") calcPrice();');
+  L.push('  if(typeof calculateTotal === "function") calculateTotal();');
+  
+  L.push('  alert(items.length+"개 상품이 자동 입력되었습니다.\\n다시 한 번 검토해주세요.");');
+  L.push('}, 1800);');
+
+  L.push('})();');
+  return L.join("\n");
+}
+
+document.getElementById("gen-btn").addEventListener("click", function() {
+  if (!parsedData || !parsedData.items.length) return;
+  var code = buildCode(parsedData);
+  navigator.clipboard.writeText(code).then(function() {
+    alert("코드 복사 완료!\n짐패스 신청서 작성 페이지 → F12 키 → 콘솔(Console) 탭에 붙여넣은 후 Enter 키를 입력하세요.");
+  }).catch(function() {
+    alert("클립보드 복사 실패");
+  });
+});
+
+// ── 사용방법 버튼 동작 ──────────────────────────────────
+document.getElementById("guide-btn").addEventListener("click", function() {
+  var guideSec = document.getElementById("guide-section");
+  if (guideSec.style.display === "none" || guideSec.style.display === "") {
+    guideSec.style.display = "block";
+  } else {
+    guideSec.style.display = "none";
+  }
+});
+
+document.getElementById("close-guide-btn").addEventListener("click", function() {
+  document.getElementById("guide-section").style.display = "none";
+});
+
+</script>
+
+</body>
+</html>
