@@ -55,10 +55,11 @@ var MARKETS = {
 
 // ── 카테고리 ──────────────────────────────────────────
 var CATS = [
-  { label: "인형류/마스코트",     catVal: "170", catVal2: "174" },
-  { label: "키링",     catVal: "204", catVal2: "240" },
-  { label: "잡화/문구",     catVal: "204", catVal2: "205" },
-  { label: "직접선택", catVal: "",    catVal2: ""    },
+  { label: "인형류/마스코트", catVal: "170", catVal2: "174" },
+  { label: "잡화/문구",       catVal: "204", catVal2: "205" },
+  { label: "키링",            catVal: "204", catVal2: "240" },
+  { label: "의류",            catVal: "3",   catVal2: "4"   },
+  { label: "직접선택",        catVal: "",    catVal2: ""    }
 ];
 
 // ── 파싱 유틸 ─────────────────────────────────────────
@@ -160,13 +161,9 @@ function parseOrderText(text) {
 function showDebug(parsed) {
   var box = document.getElementById("debug-box");
   if (parsed.items.length > 0) { box.style.display = "none"; return; }
-  var sample = parsed.debugLines.slice(0, 30).join("\n");
+  
   box.style.display = "block";
-  box.innerHTML =
-    "<b>⚠️ 인식 실패!</b><br>주문 상세 페이지를 붙여넣으세요.<br>" +
-    "<details style='margin-top:6px'><summary style='cursor:pointer;font-size:11px'>인식된 첫 30줄 보기</summary>" +
-    "<pre style='font-size:10px;margin-top:4px;white-space:pre-wrap;word-break:break-all;color:#555'>" +
-    sample.replace(/</g, "&lt;") + "</pre></details>";
+  box.innerHTML = "<b>⚠️ 인식 실패!</b><br>PC 버전의 주문 상세 페이지를 붙여넣으세요.";
 }
 
 function setCat(idx, catIdx) {
@@ -406,7 +403,7 @@ document.getElementById("gen-btn").addEventListener("click", function() {
   if (!parsedData || !parsedData.items.length) return;
   var code = buildCode(parsedData);
   navigator.clipboard.writeText(code).then(function() {
-    alert("코드 복사 완료!\n짐패스 신청서 페이지 → F12 키 → 콘솔(Console) 탭에 붙여넣은 후 엔터를 입력하세요.");
+    alert("코드 복사 완료!\n짐패스 신청서 작성 페이지 → F12 키 → 콘솔(Console) 탭에 붙여넣은 후 Enter 키를 입력하세요.");
   }).catch(function() {
     alert("클립보드 복사 실패");
   });
